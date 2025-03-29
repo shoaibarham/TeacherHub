@@ -23,6 +23,9 @@ interface TopicCardProps {
 }
 
 function TopicCard({ topic, onCreateContent }: TopicCardProps) {
+  // Ensure difficultyLevels is an array, defaulting to ["medium"] if null
+  const difficultyLevels = topic.difficultyLevels || ["medium"];
+  
   return (
     <div className="rounded-lg border border-neutral-200 hover:border-primary hover:shadow-md transition-all p-4">
       <div className="flex justify-between mb-2">
@@ -30,13 +33,13 @@ function TopicCard({ topic, onCreateContent }: TopicCardProps) {
           {topic.category || topic.subject}
         </span>
         <div className="flex space-x-1">
-          {topic.difficultyLevels.includes("easy") && (
+          {difficultyLevels.includes("easy") && (
             <span className="inline-block w-2 h-2 rounded-full bg-green-500" title="Easy difficulty"></span>
           )}
-          {topic.difficultyLevels.includes("medium") && (
+          {difficultyLevels.includes("medium") && (
             <span className="inline-block w-2 h-2 rounded-full bg-blue-500" title="Medium difficulty"></span>
           )}
-          {topic.difficultyLevels.includes("hard") && (
+          {difficultyLevels.includes("hard") && (
             <span className="inline-block w-2 h-2 rounded-full bg-red-500" title="Hard difficulty"></span>
           )}
         </div>
@@ -78,7 +81,7 @@ export function TopicSuggestions({ onCreateContent }: { onCreateContent: (topic:
   
   // Fetch suggestions for current subject and grade
   const { 
-    data: suggestions = [], 
+    data: suggestions = [] as TopicSuggestion[], 
     isLoading, 
     isError 
   } = useQuery<TopicSuggestion[]>({
@@ -87,7 +90,7 @@ export function TopicSuggestions({ onCreateContent }: { onCreateContent: (topic:
   });
   
   // Mutation to refresh suggestions
-  const { mutate: refreshSuggestions, isPending: isRefreshing } = useMutation({
+  const { mutate: refreshSuggestions, isPending: isRefreshing, error: refreshError } = useMutation({
     mutationFn: () => {
       return aiService.generateSuggestions({
         subject: activeSubject,
@@ -102,10 +105,11 @@ export function TopicSuggestions({ onCreateContent }: { onCreateContent: (topic:
         description: "New AI-generated topic suggestions are now available",
       });
     },
-    onError: () => {
+    onError: (error) => {
+      console.error("Error refreshing suggestions:", error);
       toast({
         title: "Failed to generate suggestions",
-        description: "Please try again later",
+        description: error instanceof Error ? error.message : "Please try again later",
         variant: "destructive"
       });
     }
@@ -176,21 +180,43 @@ export function TopicSuggestions({ onCreateContent }: { onCreateContent: (topic:
           
           {/* Topic Cards */}
           {isLoading ? (
-            <div className="py-8 text-center">Loading suggestions...</div>
+            <div className="py-8 text-center flex flex-col items-center">
+              <RefreshCw size={24} className="animate-spin mb-2 text-primary" />
+              <p className="text-neutral-600">Loading topic suggestions...</p>
+            </div>
           ) : isError ? (
-            <div className="py-8 text-center text-red-500">
-              Failed to load suggestions. Please try refreshing.
+            <div className="py-8 text-center">
+              <div className="text-red-500 mb-3">
+                <p className="font-medium">Failed to load suggestions</p>
+                <p className="text-sm text-neutral-600 mt-1">There was a problem fetching suggestions.</p>
+              </div>
+              <Button variant="outline" onClick={() => queryClient.invalidateQueries({ queryKey: ['/api/suggestions', activeSubject, activeGrade] })}>
+                Try Again
+              </Button>
             </div>
           ) : suggestions.length === 0 ? (
             <div className="py-8 text-center">
-              <p className="mb-4">No suggestions found for this subject and grade.</p>
-              <Button onClick={() => refreshSuggestions()}>
-                Generate Suggestions
+              <div className="mb-4">
+                <p className="font-medium">No suggestions available</p>
+                <p className="text-sm text-neutral-600 mt-1">Let's generate some AI-powered topic suggestions for {activeSubject} ({activeGrade}).</p>
+              </div>
+              <Button 
+                onClick={() => refreshSuggestions()}
+                disabled={isRefreshing}
+                className="relative"
+              >
+                {isRefreshing && <RefreshCw size={16} className="absolute left-3 animate-spin" />}
+                <span className={isRefreshing ? "pl-4" : ""}>Generate Suggestions</span>
               </Button>
+              {refreshError && (
+                <p className="mt-3 text-sm text-red-500">
+                  Error: {refreshError instanceof Error ? refreshError.message : "Failed to generate. Please try again."}
+                </p>
+              )}
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {suggestions.map((topic) => (
+              {suggestions.map((topic: TopicSuggestion) => (
                 <TopicCard 
                   key={topic.id} 
                   topic={topic} 

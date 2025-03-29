@@ -1,12 +1,15 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { TopicSuggestion } from "@shared/schema";
 
-// Initialize the Gemini API with the provided key
-const API_KEY = "AIzaSyDfSvQXOtHa0FAlkzyYVrqvql79510y1tM";
+// Initialize the Gemini API with environment variable
+const API_KEY = process.env.GOOGLE_GEMINI_API_KEY as string;
+if (!API_KEY) {
+  console.error("GOOGLE_GEMINI_API_KEY environment variable is not set");
+}
 const genAI = new GoogleGenerativeAI(API_KEY);
 
-// Access the Gemini 2.0 Flash model
-const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+// Access the Gemini model (using gemini-1.5-flash if 2.0 isn't available)
+const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
 export interface TopicSuggestionInput {
   subject: string;
@@ -17,6 +20,9 @@ export interface TopicSuggestionInput {
 export async function generateTopicSuggestions(input: TopicSuggestionInput): Promise<Omit<TopicSuggestion, "id">[]> {
   try {
     const { subject, grade, count } = input;
+    
+    console.log(`Generating ${count} topic suggestions for ${subject} class (${grade} grade)`);
+    console.log(`Using Gemini model: gemini-pro with API key: ${API_KEY.substring(0, 5)}...`);
     
     // Create a prompt for Gemini AI to generate educational topic suggestions
     const prompt = `Generate ${count} educational topic suggestions for ${subject} class for ${grade} students. 
@@ -32,24 +38,34 @@ export async function generateTopicSuggestions(input: TopicSuggestionInput): Pro
     }
     Only return valid JSON without any other text or explanation.`;
 
+    console.log("Sending prompt to Gemini API...");
+    
     // Send the prompt to Gemini
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const text = response.text();
     
+    console.log("Received response from Gemini, processing...");
+    
     try {
       // Parse the response as JSON
       const jsonStr = text.replace(/```json|```/g, '').trim();
-      const suggestions = JSON.parse(jsonStr) as Array<Omit<TopicSuggestion, "id">>;
+      console.log("Cleaned response:", jsonStr.substring(0, 100) + "...");
       
-      return suggestions.slice(0, count).map(suggestion => ({
+      const suggestions = JSON.parse(jsonStr) as Array<Omit<TopicSuggestion, "id">>;
+      console.log(`Successfully parsed ${suggestions.length} suggestions`);
+      
+      const formattedSuggestions = suggestions.slice(0, count).map(suggestion => ({
         title: suggestion.title,
         description: suggestion.description,
         subject: subject,
         grade: grade,
-        category: suggestion.category,
-        difficultyLevels: suggestion.difficultyLevels
+        category: suggestion.category || subject,
+        difficultyLevels: suggestion.difficultyLevels || ["medium"]
       }));
+      
+      console.log("Returning formatted suggestions:", formattedSuggestions.length);
+      return formattedSuggestions;
     } catch (parseError) {
       console.error("Failed to parse Gemini response:", parseError);
       console.log("Raw response:", text);
@@ -57,6 +73,7 @@ export async function generateTopicSuggestions(input: TopicSuggestionInput): Pro
     }
   } catch (error) {
     console.error("Error in Gemini API call:", error);
+    console.error("Error details:", JSON.stringify(error));
     throw error;
   }
 }
