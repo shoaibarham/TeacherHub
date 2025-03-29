@@ -5,8 +5,8 @@ import { TopicSuggestion } from "@shared/schema";
 const API_KEY = "AIzaSyDfSvQXOtHa0FAlkzyYVrqvql79510y1tM";
 const genAI = new GoogleGenerativeAI(API_KEY);
 
-// Access the Gemini model
-const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+// Access the Gemini 2.0 Flash model
+const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
 export interface TopicSuggestionInput {
   subject: string;

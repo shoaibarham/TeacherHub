@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Menu, Bell, Search, ChevronDown, School } from "lucide-react";
+import { useLocation } from 'wouter';
+import { toast } from "@/hooks/use-toast";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,6 +20,7 @@ interface HeaderProps {
 export default function Header({ onSidebarToggle }: HeaderProps) {
   const [showNotifications, setShowNotifications] = useState(false);
   const notificationsRef = useRef<HTMLDivElement>(null);
+  const [, setLocation] = useLocation();
   
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -31,6 +34,20 @@ export default function Header({ onSidebarToggle }: HeaderProps) {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
+  
+  const handleSignOut = () => {
+    // In a real app, we would make an API call to sign out from the server
+    console.log('Signing out...');
+    
+    // For now, just simulate a sign-out with a toast notification
+    toast({
+      title: "Signed out successfully",
+      description: "You have been signed out of your account.",
+    });
+    
+    // Redirect to login page (or home in this case)
+    setTimeout(() => setLocation('/'), 1000);
+  };
   
   return (
     <header className="bg-white shadow z-10 sticky top-0">
@@ -127,7 +144,7 @@ export default function Header({ onSidebarToggle }: HeaderProps) {
                 Help & Support
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="cursor-pointer text-red-500">
+              <DropdownMenuItem className="cursor-pointer text-red-500" onClick={handleSignOut}>
                 Sign Out
               </DropdownMenuItem>
             </DropdownMenuContent>

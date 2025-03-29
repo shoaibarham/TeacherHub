@@ -115,9 +115,19 @@ export function CreateContentModal({
         data.htmlContent = editorRef.current.getContent();
       }
       
-      return apiRequest('POST', '/api/content', data);
+      console.log('Submitting content data:', JSON.stringify(data, null, 2));
+      
+      try {
+        const response = await apiRequest('POST', '/api/content', data);
+        console.log('Create content response:', response);
+        return response;
+      } catch (error) {
+        console.error('Error creating content:', error);
+        throw error;
+      }
     },
-    onSuccess: async () => {
+    onSuccess: async (response) => {
+      console.log('Content created successfully:', response);
       toast({
         title: "Content created",
         description: "Your content has been successfully created",
@@ -130,9 +140,10 @@ export function CreateContentModal({
       }
     },
     onError: (error) => {
+      console.error('Error in mutation:', error);
       toast({
         title: "Error creating content",
-        description: error.message,
+        description: "Failed to create content. Please try again.",
         variant: "destructive",
       });
     }
@@ -195,7 +206,7 @@ export function CreateContentModal({
         
         <div className="overflow-y-auto flex-1 pr-2">
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+            <form id="create-content-form" onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
               {/* Content Type Selection */}
               <div className="mb-6">
                 <FormLabel className="block text-sm font-medium text-neutral-700 mb-2">
@@ -434,12 +445,12 @@ export function CreateContentModal({
         </div>
         
         <DialogFooter className="border-t border-neutral-200 pt-4 mt-4">
-          <Button variant="outline" onClick={onClose}>
+          <Button variant="outline" onClick={onClose} type="button">
             Cancel
           </Button>
           <Button 
             type="submit" 
-            onClick={form.handleSubmit(handleSubmit)}
+            form="create-content-form"
             disabled={isPending}
           >
             {isPending && <RefreshCw className="mr-2 h-4 w-4 animate-spin" />}
