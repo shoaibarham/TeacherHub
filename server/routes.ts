@@ -190,6 +190,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Failed to generate AI suggestions with Gemini" });
     }
   });
+  
+  // Generate content with Google Gemini AI
+  app.post("/api/ai/content", async (req: Request, res: Response) => {
+    try {
+      const { prompt, subject, grade } = req.body;
+      
+      if (!prompt) {
+        return res.status(400).json({ error: "Prompt is required" });
+      }
+      
+      // Get the Gemini API key
+      const API_KEY = process.env.GOOGLE_GEMINI_API_KEY as string;
+      if (!API_KEY) {
+        return res.status(500).json({ error: "AI API key is not configured" });
+      }
+      
+      try {
+        console.log(`Generating content with prompt: "${prompt.substring(0, 50)}..."`);
+        console.log(`Context: Subject=${subject || 'N/A'}, Grade=${grade || 'N/A'}`);
+        
+        // Import the Gemini library
+        const { GoogleGenerativeAI } = await import("@google/generative-ai");
+        const genAI = new GoogleGenerativeAI(API_KEY);
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        
+        // Enhance the prompt with context information if available
+        let enhancedPrompt = prompt;
+        if (subject || grade) {
+          enhancedPrompt = `Generate educational content for ${grade || 'students'} about ${subject || 'the topic'} based on this prompt: ${prompt}. 
+          Format the response as HTML with appropriate headings, paragraphs, lists, and emphasis for key points. 
+          Make it educational, engaging, and appropriate for the specified grade level.`;
+        } else {
+          enhancedPrompt = `Generate educational content based on this prompt: ${prompt}. 
+          Format the response as HTML with appropriate headings, paragraphs, lists, and emphasis for key points.`;
+        }
+        
+        console.log("Sending enhanced prompt to Gemini API...");
+        
+        // Send the prompt to Gemini
+        const result = await model.generateContent(enhancedPrompt);
+        const response = await result.response;
+        const text = response.text();
+        
+        console.log("Received response from Gemini, processing...");
+        
+        // Format the response as HTML with proper tags if needed
+        let formattedContent = text;
+        
+        // If the response doesn't already include HTML tags, wrap it in basic HTML
+        if (!formattedContent.includes('<h1>') && !formattedContent.includes('<h2>') && 
+            !formattedContent.includes('<p>') && !formattedContent.includes('<ul>')) {
+          formattedContent = `<h2>${prompt}</h2>
+          ${formattedContent.split('\n\n').map(para => `<p>${para}</p>`).join('')}`;
+        }
+        
+        res.status(200).json({ content: formattedContent });
+      } catch (error) {
+        console.error("Error generating AI content:", error);
+        res.status(500).json({ error: "Failed to generate AI content" });
+      }
+    } catch (error) {
+      console.error("Error in /api/ai/content:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
 
   return httpServer;
 }

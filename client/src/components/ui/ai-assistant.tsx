@@ -52,30 +52,64 @@ export function AIAssistant({
     setIsGenerating(true);
     
     try {
-      // This would be replaced with an actual API call to generate content
-      // For now, we'll simulate a response with a timeout
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Create a payload with the subject and grade context if available
+      const payload = {
+        prompt: prompt,
+        subject: subjectContext || '',
+        grade: gradeContext || '',
+      };
       
-      // Sample generated content
-      const content = `<h2>Generated Content for "${prompt}"</h2>
-      <p>This is where the AI-generated content would appear. In a production environment, this would be generated based on your prompt using Gemini AI.</p>
-      <ul>
-        <li>Key point 1 related to your query</li>
-        <li>Key point 2 related to your query</li>
-        <li>Key point 3 related to your query</li>
-      </ul>
-      <p>Additional paragraph with more information...</p>`;
+      console.log("Generating AI content with:", payload);
       
-      setGeneratedContent(content);
-      toast({
-        title: "Content generated",
-        description: "AI has generated content based on your prompt.",
+      // Call our API to generate content
+      const response = await fetch('/api/ai/content', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
       });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to generate content');
+      }
+      
+      const data = await response.json();
+      
+      // Process the returned content
+      if (data && data.content) {
+        setGeneratedContent(data.content);
+        toast({
+          title: "Content generated",
+          description: "AI has generated content based on your prompt.",
+        });
+      } else {
+        // If we don't get proper content, provide a fallback message
+        // This helps if our API is still being developed
+        console.log("No content returned from API, using fallback content");
+        const fallbackContent = `<h2>${prompt}</h2>
+<p>Here's some educational content for ${subjectContext || 'your subject'} at the ${gradeContext || 'appropriate'} level:</p>
+<ul>
+  <li>Key concept 1: Understanding the fundamentals</li>
+  <li>Key concept 2: Application in real-world scenarios</li>
+  <li>Key concept 3: Advanced techniques and strategies</li>
+</ul>
+<p>The AI content generation feature is still being connected to our backend. This is placeholder content that you can customize for your needs.</p>`;
+        
+        setGeneratedContent(fallbackContent);
+        toast({
+          title: "Using temporary content",
+          description: "We're still connecting to our AI backend. Feel free to customize this content.",
+        });
+      }
     } catch (error) {
       console.error("Error generating content:", error);
       toast({
         title: "Generation failed",
-        description: "Failed to generate content. Please try again.",
+        description: typeof error === 'object' && error !== null && 'message' in error 
+          ? (error as Error).message
+          : 'Failed to generate content. Please try again.',
         variant: "destructive",
       });
     } finally {
