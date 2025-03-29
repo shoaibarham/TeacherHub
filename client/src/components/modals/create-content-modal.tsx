@@ -110,12 +110,17 @@ export function CreateContentModal({
   // Create content mutation
   const { mutate: createContent, isPending } = useMutation({
     mutationFn: async (data: FormValues) => {
-      // Get HTML content from editor
-      if (editorRef.current) {
+      console.log('Submitting content data:', JSON.stringify(data, null, 2));
+      
+      // Ensure we have HTML content from editor
+      if (!data.htmlContent && editorRef.current) {
         data.htmlContent = editorRef.current.getContent();
       }
       
-      console.log('Submitting content data:', JSON.stringify(data, null, 2));
+      // If still no content, provide a default
+      if (!data.htmlContent) {
+        data.htmlContent = "<p>Empty content</p>";
+      }
       
       try {
         const response = await apiRequest('POST', '/api/content', data);
@@ -150,12 +155,34 @@ export function CreateContentModal({
   });
   
   const handleSubmit = (values: FormValues) => {
+    // Get content from the rich text editor
+    if (editorRef.current) {
+      values.htmlContent = editorRef.current.getContent();
+    }
+    
+    // Log the form submission for debugging
+    console.log("Form submitted with values:", values);
+    
+    // Display a toast to confirm submission attempt
+    toast({
+      title: "Processing submission",
+      description: "Creating your content...",
+    });
+    
+    // Submit the data to the server
     createContent(values);
   };
   
   const handleContentTypeChange = (type: string) => {
+    console.log(`Content type selected: ${type}`);
     setActiveContentType(type);
     form.setValue('type', type as any);
+    
+    // Show toast for debugging purposes
+    toast({
+      title: `${type.charAt(0).toUpperCase() + type.slice(1)} selected`,
+      description: `You're now creating ${type}.`,
+    });
   };
   
   const fetchAiSuggestions = async () => {
@@ -452,6 +479,12 @@ export function CreateContentModal({
             type="submit" 
             form="create-content-form"
             disabled={isPending}
+            onClick={() => {
+              // Backup submission method in case form submission isn't triggered
+              if (!form.formState.isSubmitting) {
+                form.handleSubmit(handleSubmit)();
+              }
+            }}
           >
             {isPending && <RefreshCw className="mr-2 h-4 w-4 animate-spin" />}
             Create & Save
