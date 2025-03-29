@@ -50,8 +50,13 @@ const formSchema = insertContentSchema.extend({
 
 type FormValues = z.infer<typeof formSchema>;
 
-export default function ContentDetail() {
-  const { id } = useParams<{ id: string }>();
+interface ContentDetailProps {
+  id?: string;
+}
+
+export default function ContentDetail({ id: propId }: ContentDetailProps) {
+  const params = useParams<{ id: string }>();
+  const id = propId || params.id;
   const [, navigate] = useLocation();
   const editorRef = useRef<RichTextEditorRef>(null);
   
@@ -80,9 +85,12 @@ export default function ContentDetail() {
   // Update form when content is loaded
   useEffect(() => {
     if (content) {
+      // Convert tags array to comma-separated string
+      const tagsString = Array.isArray(content.tags) ? content.tags.join(', ') : '';
+      
       form.reset({
         ...content,
-        tags: content.tags ? content.tags.join(', ') : '',
+        tags: tagsString,
       });
       
       // Update rich text editor content

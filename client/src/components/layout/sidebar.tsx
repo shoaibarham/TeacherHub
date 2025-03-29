@@ -119,6 +119,12 @@ export default function Sidebar({ className, isOpen }: SidebarProps) {
           <NavSection title="Content Creation">
             <SidebarNavItem 
               icon={<FileText size={18} />} 
+              label="Create New Content" 
+              href="/content/create" 
+              active={location === "/content/create"} 
+            />
+            <SidebarNavItem 
+              icon={<FileText size={18} />} 
               label="Notes" 
               href="/content/notes" 
               active={location === "/content/notes"} 

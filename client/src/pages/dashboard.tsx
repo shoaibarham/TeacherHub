@@ -5,6 +5,7 @@ import { StatsGrid } from "@/components/dashboard/stats";
 import { RecentContent } from "@/components/dashboard/recent-content";
 import { TopicSuggestions } from "@/components/dashboard/topic-suggestions";
 import { TopicSuggestion } from "@shared/schema";
+import { useLocation } from "wouter";
 
 interface DashboardProps {
   openCreateModal?: () => void;
@@ -12,13 +13,12 @@ interface DashboardProps {
 
 export default function Dashboard({ openCreateModal }: DashboardProps) {
   const [selectedTopic, setSelectedTopic] = useState<TopicSuggestion | undefined>(undefined);
+  const [, navigate] = useLocation();
   
   // Handle creating content from a topic suggestion
   const handleCreateFromTopic = (topic: TopicSuggestion) => {
     setSelectedTopic(topic);
-    if (openCreateModal) {
-      openCreateModal();
-    }
+    navigate('/content/create');
   };
   
   return (
@@ -28,7 +28,7 @@ export default function Dashboard({ openCreateModal }: DashboardProps) {
           <h2 className="text-2xl font-bold font-heading">Dashboard</h2>
           <Button 
             className="shadow-sm" 
-            onClick={openCreateModal}
+            onClick={() => navigate('/content/create')}
           >
             <PlusCircle className="mr-2 h-4 w-4" />
             Create Content

@@ -34,11 +34,13 @@ import { formatDistanceToNow } from 'date-fns';
 import { SUBJECTS, GRADES } from "@/lib/constants";
 
 interface ContentListProps {
-  openCreateModal?: () => void;
+  type?: string;
 }
 
-export default function ContentList({ openCreateModal }: ContentListProps) {
-  const { type } = useParams<{ type: string }>();
+export default function ContentList({ type }: ContentListProps) {
+  // If type is not provided via props, try to get it from URL params
+  const params = useParams<{ type: string }>();
+  const contentType = type || params.type;
   const [, navigate] = useLocation();
   
   const [subjectFilter, setSubjectFilter] = useState<string>("all");
@@ -49,7 +51,7 @@ export default function ContentList({ openCreateModal }: ContentListProps) {
   
   // Get appropriate title and icon based on content type
   const getTypeDetails = () => {
-    switch (type) {
+    switch (contentType) {
       case ContentType.NOTES:
         return { title: "Notes", icon: <FileText className="mr-2" /> };
       case ContentType.QUIZ:
@@ -73,7 +75,7 @@ export default function ContentList({ openCreateModal }: ContentListProps) {
   // Filter content by type and other filters
   const filteredContent = allContent.filter(item => {
     // Filter by type
-    if (type && item.type !== type) return false;
+    if (contentType && item.type !== contentType) return false;
     
     // Filter by subject
     if (subjectFilter !== "all" && item.subject !== subjectFilter) return false;
@@ -141,9 +143,9 @@ export default function ContentList({ openCreateModal }: ContentListProps) {
           {icon}
           {title}
         </h1>
-        <Button onClick={openCreateModal}>
+        <Button onClick={() => navigate('/content/create')}>
           <PlusCircle className="mr-2 h-4 w-4" />
-          Create {type === ContentType.QUIZ ? "Quiz" : type?.charAt(0).toUpperCase() + type?.slice(1)}
+          Create {contentType === ContentType.QUIZ ? "Quiz" : contentType?.charAt(0).toUpperCase() + contentType?.slice(1)}
         </Button>
       </div>
       
