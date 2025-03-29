@@ -24,7 +24,8 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import RichTextEditor, { RichTextEditorRef } from "@/components/ui/rich-text-editor";
-import { FileText, BookOpen, FileCheck, FilePlus, RefreshCw, ArrowLeft } from "lucide-react";
+import { AIAssistant } from "@/components/ui/ai-assistant";
+import { FileText, BookOpen, FileCheck, FilePlus, RefreshCw, ArrowLeft, Sparkles } from "lucide-react";
 import { 
   insertContentSchema, 
   ContentType, 
@@ -44,6 +45,7 @@ type FormValues = z.infer<typeof formSchema>;
 export default function ContentCreate() {
   const [, navigate] = useLocation();
   const [activeContentType, setActiveContentType] = useState<string>(ContentType.NOTES);
+  const [isAIAssistantOpen, setIsAIAssistantOpen] = useState(false);
   const editorRef = useRef<RichTextEditorRef>(null);
   
   // Create form with default values
@@ -298,13 +300,42 @@ export default function ContentCreate() {
           
           {/* Content Input Area */}
           <div>
-            <FormLabel className="block text-sm font-medium text-neutral-700 mb-1">
-              Content
-            </FormLabel>
+            <div className="flex items-center justify-between mb-1">
+              <FormLabel className="block text-sm font-medium text-neutral-700">
+                Content
+              </FormLabel>
+              <Button 
+                type="button" 
+                variant="outline" 
+                size="sm" 
+                className="flex items-center text-primary"
+                onClick={() => setIsAIAssistantOpen(true)}
+              >
+                <Sparkles className="h-4 w-4 mr-1" />
+                AI Assist
+              </Button>
+            </div>
             <RichTextEditor 
               ref={editorRef}
               placeholder="Start typing your content here..."
               minHeight={280}
+            />
+            
+            {/* AI Assistant Dialog */}
+            <AIAssistant 
+              isOpen={isAIAssistantOpen}
+              onClose={() => setIsAIAssistantOpen(false)}
+              onInsertContent={(content) => {
+                if (editorRef.current) {
+                  editorRef.current.insertText(content);
+                  toast({
+                    title: "Content inserted",
+                    description: "AI-generated content has been added to your document."
+                  });
+                }
+              }}
+              subjectContext={form.watch("subject")}
+              gradeContext={form.watch("grade")}
             />
           </div>
           

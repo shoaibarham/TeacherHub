@@ -61,14 +61,41 @@ const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>(({
       if (editorRef.current) {
         const selection = window.getSelection();
         if (selection && selection.rangeCount > 0) {
-          const range = selection.getRangeAt(0);
-          const textNode = document.createTextNode(text);
-          range.insertNode(textNode);
-          range.setStartAfter(textNode);
-          range.setEndAfter(textNode);
-          selection.removeAllRanges();
-          selection.addRange(range);
+          // Determine if the input is HTML or plain text
+          const isHTML = /<[a-z][\s\S]*>/i.test(text);
+          
+          if (isHTML) {
+            // Create a temporary div to hold our HTML
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = text;
+            
+            const range = selection.getRangeAt(0);
+            
+            // Insert each child node from our HTML
+            const fragment = document.createDocumentFragment();
+            while (tempDiv.firstChild) {
+              fragment.appendChild(tempDiv.firstChild);
+            }
+            
+            range.deleteContents();
+            range.insertNode(fragment);
+            
+            // Move the cursor to the end
+            range.collapse(false);
+            selection.removeAllRanges();
+            selection.addRange(range);
+          } else {
+            // Just insert plain text
+            const range = selection.getRangeAt(0);
+            const textNode = document.createTextNode(text);
+            range.insertNode(textNode);
+            range.setStartAfter(textNode);
+            range.setEndAfter(textNode);
+            selection.removeAllRanges();
+            selection.addRange(range);
+          }
         } else {
+          // If no selection, append to the end
           editorRef.current.innerHTML += text;
         }
         handleInput();
@@ -207,19 +234,7 @@ const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>(({
             })()
           )
         )}
-        <Separator key="sep-ai" orientation="vertical" className="h-6 mx-1" />
-        <Button
-          key="btn-ai"
-          variant="ghost"
-          size="sm"
-          title="Get AI Suggestions"
-          className="px-2 h-8 flex items-center gap-1"
-          type="button"
-          onClick={() => alert('AI Assist will be available here')}
-        >
-          <Sparkles size={18} className="text-primary" />
-          <span className="text-xs">AI Assist</span>
-        </Button>
+        {/* Removed the AI assist button from the toolbar to avoid duplication */}
       </div>
       <div
         ref={editorRef}

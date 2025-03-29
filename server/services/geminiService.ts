@@ -8,8 +8,8 @@ if (!API_KEY) {
 }
 const genAI = new GoogleGenerativeAI(API_KEY);
 
-// Access the Gemini model (using gemini-1.5-flash if 2.0 isn't available)
-const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+// Access the Gemini model (using gemini-1.5-flash for now)
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 export interface TopicSuggestionInput {
   subject: string;
@@ -22,7 +22,7 @@ export async function generateTopicSuggestions(input: TopicSuggestionInput): Pro
     const { subject, grade, count } = input;
     
     console.log(`Generating ${count} topic suggestions for ${subject} class (${grade} grade)`);
-    console.log(`Using Gemini model: gemini-pro with API key: ${API_KEY.substring(0, 5)}...`);
+    console.log(`Using Gemini model: gemini-1.5-flash with API key: ${API_KEY.substring(0, 5)}...`);
     
     // Create a prompt for Gemini AI to generate educational topic suggestions
     const prompt = `Generate ${count} educational topic suggestions for ${subject} class for ${grade} students. 
