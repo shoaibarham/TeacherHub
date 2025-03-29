@@ -33,7 +33,14 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, Save, Trash2, Eye, Share2, Loader2 } from "lucide-react";
 import RichTextEditor, { RichTextEditorRef } from "@/components/ui/rich-text-editor";
-import { insertContentSchema, Content, DifficultyLevel, ContentType } from "@shared/schema";
+import { 
+  insertContentSchema, 
+  Content, 
+  DifficultyLevel, 
+  ContentType,
+  ContentTypeValue,
+  DifficultyLevelValue
+} from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { queryClient } from "@/lib/queryClient";
 import { toast } from "@/hooks/use-toast";
@@ -78,19 +85,24 @@ export default function ContentDetail({ id: propId }: ContentDetailProps) {
       htmlContent: "",
       createdById: 1,
       isPublic: false,
-      tags: ""
+      tags: []
     }
   });
   
   // Update form when content is loaded
   useEffect(() => {
     if (content) {
-      // Convert tags array to comma-separated string
-      const tagsString = Array.isArray(content.tags) ? content.tags.join(', ') : '';
-      
+      // We need to explicitly cast the values to the correct types
       form.reset({
-        ...content,
-        tags: tagsString,
+        title: content.title,
+        type: content.type as ContentTypeValue,
+        subject: content.subject,
+        grade: content.grade, 
+        difficulty: content.difficulty as DifficultyLevelValue,
+        htmlContent: content.htmlContent,
+        createdById: content.createdById,
+        isPublic: !!content.isPublic,
+        tags: Array.isArray(content.tags) ? content.tags : []
       });
       
       // Update rich text editor content
@@ -355,15 +367,38 @@ export default function ContentDetail({ id: propId }: ContentDetailProps) {
                 <FormField
                   control={form.control}
                   name="tags"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Tags</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter comma-separated tags" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                  render={({ field }) => {
+                    // Convert array to string for display in input field
+                    const tagsString = Array.isArray(field.value) 
+                      ? field.value.join(', ') 
+                      : '';
+                    
+                    // Handle the onChange to convert comma-separated string back to array
+                    const handleTagsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+                      const tagsArray = e.target.value
+                        .split(',')
+                        .map(tag => tag.trim())
+                        .filter(tag => tag !== '');
+                      field.onChange(tagsArray);
+                    };
+                    
+                    return (
+                      <FormItem>
+                        <FormLabel>Tags</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="Enter comma-separated tags" 
+                            value={tagsString}
+                            onChange={handleTagsChange}
+                            onBlur={field.onBlur}
+                            name={field.name}
+                            ref={field.ref}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    );
+                  }}
                 />
                 
                 <FormField

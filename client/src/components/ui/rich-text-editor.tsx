@@ -141,6 +141,7 @@ const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>(({
   // Define toolbar button types
   interface BaseToolbarItem {
     type?: string;
+    id?: string; // Add unique ID field
   }
   
   interface SeparatorItem extends BaseToolbarItem {
@@ -159,20 +160,20 @@ const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>(({
 
   // Standard toolbar buttons
   const toolbarButtons: ToolbarButton[] = [
-    { icon: <Bold size={18} />, command: 'bold', title: 'Bold' },
-    { icon: <Italic size={18} />, command: 'italic', title: 'Italic' },
-    { icon: <Underline size={18} />, command: 'underline', title: 'Underline' },
-    { icon: <Strikethrough size={18} />, command: 'strikeThrough', title: 'Strikethrough' },
-    { type: 'separator' } as SeparatorItem,
-    { icon: <Heading1 size={18} />, command: 'formatBlock', value: '<h1>', title: 'Heading 1' },
-    { icon: <Heading2 size={18} />, command: 'formatBlock', value: '<h2>', title: 'Heading 2' },
-    { icon: <List size={18} />, command: 'insertUnorderedList', title: 'Bullet List' },
-    { icon: <ListOrdered size={18} />, command: 'insertOrderedList', title: 'Numbered List' },
-    { type: 'separator' } as SeparatorItem,
-    { icon: <Link size={18} />, command: 'createLink', title: 'Insert Link', special: true },
-    { icon: <Image size={18} />, command: 'insertImage', title: 'Insert Image', special: true },
-    { icon: <Table size={18} />, command: 'insertTable', title: 'Insert Table', special: true },
-    { icon: <Code size={18} />, command: 'insertMath', title: 'Insert Math Formula', special: true },
+    { id: 'btn-bold', icon: <Bold size={18} />, command: 'bold', title: 'Bold' },
+    { id: 'btn-italic', icon: <Italic size={18} />, command: 'italic', title: 'Italic' },
+    { id: 'btn-underline', icon: <Underline size={18} />, command: 'underline', title: 'Underline' },
+    { id: 'btn-strike', icon: <Strikethrough size={18} />, command: 'strikeThrough', title: 'Strikethrough' },
+    { id: 'sep-1', type: 'separator' } as SeparatorItem,
+    { id: 'btn-h1', icon: <Heading1 size={18} />, command: 'formatBlock', value: '<h1>', title: 'Heading 1' },
+    { id: 'btn-h2', icon: <Heading2 size={18} />, command: 'formatBlock', value: '<h2>', title: 'Heading 2' },
+    { id: 'btn-ul', icon: <List size={18} />, command: 'insertUnorderedList', title: 'Bullet List' },
+    { id: 'btn-ol', icon: <ListOrdered size={18} />, command: 'insertOrderedList', title: 'Numbered List' },
+    { id: 'sep-2', type: 'separator' } as SeparatorItem,
+    { id: 'btn-link', icon: <Link size={18} />, command: 'createLink', title: 'Insert Link', special: true },
+    { id: 'btn-image', icon: <Image size={18} />, command: 'insertImage', title: 'Insert Image', special: true },
+    { id: 'btn-table', icon: <Table size={18} />, command: 'insertTable', title: 'Insert Table', special: true },
+    { id: 'btn-math', icon: <Code size={18} />, command: 'insertMath', title: 'Insert Math Formula', special: true },
   ];
   
   return (
@@ -181,15 +182,15 @@ const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>(({
       style={{ minHeight }}
     >
       <div className="border-b bg-slate-50 p-2 flex flex-wrap gap-1">
-        {toolbarButtons.map((btn, index) => 
+        {toolbarButtons.map((btn) => 
           btn.type === 'separator' ? (
-            <Separator key={`sep-${index}`} orientation="vertical" className="h-6 mx-1" />
+            <Separator key={btn.id} orientation="vertical" className="h-6 mx-1" />
           ) : (
             (() => {
               const buttonItem = btn as ButtonItem;
               return (
                 <Button
-                  key={buttonItem.command}
+                  key={buttonItem.id}
                   variant="ghost"
                   size="sm"
                   title={buttonItem.title}
@@ -206,8 +207,9 @@ const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>(({
             })()
           )
         )}
-        <Separator orientation="vertical" className="h-6 mx-1" />
+        <Separator key="sep-ai" orientation="vertical" className="h-6 mx-1" />
         <Button
+          key="btn-ai"
           variant="ghost"
           size="sm"
           title="Get AI Suggestions"

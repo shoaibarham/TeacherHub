@@ -36,9 +36,7 @@ import { SUBJECTS, GRADES } from "@/lib/constants";
 
 const formSchema = insertContentSchema.extend({
   title: z.string().min(3, "Title must be at least 3 characters"),
-  tags: z.string().optional().transform((val) => 
-    val ? val.split(',').map(tag => tag.trim()) : []
-  ),
+  tags: z.array(z.string()).default([]),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -315,16 +313,39 @@ export default function ContentCreate() {
             <FormField
               control={form.control}
               name="tags"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Tags (optional)</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter comma-separated tags" {...field} />
-                  </FormControl>
-                  <p className="text-xs text-neutral-500 mt-1">Tags help students find relevant content</p>
-                  <FormMessage />
-                </FormItem>
-              )}
+              render={({ field }) => {
+                // Convert array to string for display in input field
+                const tagsString = Array.isArray(field.value) 
+                  ? field.value.join(', ') 
+                  : '';
+                
+                // Handle the onChange to convert comma-separated string back to array
+                const handleTagsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+                  const tagsArray = e.target.value
+                    .split(',')
+                    .map(tag => tag.trim())
+                    .filter(tag => tag !== '');
+                  field.onChange(tagsArray);
+                };
+                
+                return (
+                  <FormItem>
+                    <FormLabel>Tags (optional)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="Enter comma-separated tags" 
+                        value={tagsString}
+                        onChange={handleTagsChange}
+                        onBlur={field.onBlur}
+                        name={field.name}
+                        ref={field.ref}
+                      />
+                    </FormControl>
+                    <p className="text-xs text-neutral-500 mt-1">Tags help students find relevant content</p>
+                    <FormMessage />
+                  </FormItem>
+                );
+              }}
             />
             
             <FormField
