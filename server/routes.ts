@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { insertContentSchema, insertTopicSuggestionSchema } from "@shared/schema";
 import { z } from "zod";
 import { fromZodError } from "zod-validation-error";
+import { generateTopicSuggestions } from "./services/geminiService";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
@@ -171,56 +172,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Subject and grade are required" });
       }
       
-      // This route would normally call the Gemini API, but for now we'll create mock suggestions
-      // as we don't have an actual API key setup in this environment
-      const suggestions = generateSampleSuggestions(subject, grade, count);
+      // Call the Gemini AI service to generate educational topic suggestions
+      const generatedSuggestions = await generateTopicSuggestions({
+        subject,
+        grade,
+        count: Number(count)
+      });
       
       // Save suggestions to storage
       const savedSuggestions = await Promise.all(
-        suggestions.map(suggestion => storage.createTopicSuggestion(suggestion))
+        generatedSuggestions.map(suggestion => storage.createTopicSuggestion(suggestion))
       );
       
       res.json({ suggestions: savedSuggestions });
     } catch (error) {
-      res.status(500).json({ error: "Failed to generate AI suggestions" });
+      console.error("Error generating AI suggestions:", error);
+      res.status(500).json({ error: "Failed to generate AI suggestions with Gemini" });
     }
   });
 
   return httpServer;
-}
-
-// Helper function to generate sample suggestions
-// In a real implementation, this would be replaced with actual Gemini API calls
-function generateSampleSuggestions(subject: string, grade: string, count: number) {
-  const suggestions = [];
-  
-  const categories = {
-    "Mathematics": ["Algebra", "Geometry", "Statistics", "Calculus"],
-    "Science": ["Biology", "Chemistry", "Physics", "Earth Science"],
-    "English": ["Literature", "Grammar", "Composition", "Rhetoric"],
-    "History": ["Ancient", "Medieval", "Modern", "Contemporary"],
-    "Geography": ["Physical", "Human", "Environmental", "Economic"]
-  };
-  
-  const subjectCategories = categories[subject as keyof typeof categories] || ["General"];
-  
-  for (let i = 0; i < count; i++) {
-    const categoryIndex = i % subjectCategories.length;
-    const category = subjectCategories[categoryIndex];
-    
-    suggestions.push({
-      title: `${category} Topic ${i + 1} for ${grade}`,
-      description: `A comprehensive study of ${category.toLowerCase()} concepts suitable for ${grade} students.`,
-      subject,
-      grade,
-      category,
-      difficultyLevels: i % 3 === 0 
-        ? ["easy", "medium"] 
-        : i % 3 === 1 
-          ? ["medium", "hard"] 
-          : ["easy", "medium", "hard"]
-    });
-  }
-  
-  return suggestions;
 }

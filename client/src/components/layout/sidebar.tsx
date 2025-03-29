@@ -35,19 +35,21 @@ interface SidebarNavItemProps {
 
 const SidebarNavItem = ({ icon, label, href, active }: SidebarNavItemProps) => {
   return (
-    <Link href={href}>
-      <a
-        className={cn(
-          "flex items-center px-3 py-2 rounded-lg text-neutral-600 hover:bg-neutral-100 transition-colors",
-          active && "text-primary bg-primary/10 font-medium"
-        )}
-      >
-        <span className={cn("mr-3", active ? "text-primary" : "text-neutral-500")}>
-          {icon}
-        </span>
-        <span>{label}</span>
-      </a>
-    </Link>
+    <div>
+      <Link href={href}>
+        <div
+          className={cn(
+            "flex items-center px-3 py-2 rounded-lg text-neutral-600 hover:bg-neutral-100 transition-colors cursor-pointer",
+            active && "text-primary bg-primary/10 font-medium"
+          )}
+        >
+          <span className={cn("mr-3", active ? "text-primary" : "text-neutral-500")}>
+            {icon}
+          </span>
+          <span>{label}</span>
+        </div>
+      </Link>
+    </div>
   );
 };
 
