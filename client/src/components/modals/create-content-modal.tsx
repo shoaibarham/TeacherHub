@@ -476,15 +476,65 @@ export function CreateContentModal({
             Cancel
           </Button>
           <Button 
-            type="submit" 
-            form="create-content-form"
+            type="button" 
             disabled={isPending}
             onClick={() => {
-              // Backup submission method in case form submission isn't triggered
-              if (!form.formState.isSubmitting) {
-                form.handleSubmit(handleSubmit)();
+              // Direct submission method instead of relying on form submit
+              console.log("Save button clicked");
+              
+              // Get all form values
+              const values = form.getValues();
+              
+              // Check for required fields
+              if (!values.title) {
+                toast({
+                  title: "Title required",
+                  description: "Please enter a title for your content",
+                  variant: "destructive"
+                });
+                return;
               }
+              
+              if (!values.subject) {
+                toast({
+                  title: "Subject required",
+                  description: "Please select a subject for your content",
+                  variant: "destructive"
+                });
+                return;
+              }
+              
+              if (!values.grade) {
+                toast({
+                  title: "Grade required",
+                  description: "Please select a grade level for your content",
+                  variant: "destructive"
+                });
+                return;
+              }
+              
+              // Get content from editor
+              if (editorRef.current) {
+                values.htmlContent = editorRef.current.getContent();
+              }
+              
+              // If still no content, add default content
+              if (!values.htmlContent) {
+                values.htmlContent = "<p>Enter your content here</p>";
+              }
+              
+              console.log("Submitting form with values:", values);
+              
+              // Display toast
+              toast({
+                title: "Creating content",
+                description: "Saving your content..."
+              });
+              
+              // Submit directly to the mutation
+              createContent(values);
             }}
+            className="bg-primary hover:bg-primary/90"
           >
             {isPending && <RefreshCw className="mr-2 h-4 w-4 animate-spin" />}
             Create & Save
